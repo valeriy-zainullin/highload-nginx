@@ -46,6 +46,10 @@ services:
     extends:
       file: "benchmark-2/docker-compose.yml"
       service: backend-instance-2_benchmark-2
+  backend-instance-3_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: backend-instance-3_benchmark-2
   nginx-setup-1_benchmark-2:
     extends:
       file: "benchmark-2/docker-compose.yml"
@@ -53,6 +57,7 @@ services:
     depends_on:
       - backend-instance-1_benchmark-2
       - backend-instance-2_benchmark-2
+      - backend-instance-3_benchmark-2
   nginx-setup-2_benchmark-2:
     extends:
       file: "benchmark-2/docker-compose.yml"
@@ -60,6 +65,7 @@ services:
     depends_on:
       - backend-instance-1_benchmark-2
       - backend-instance-2_benchmark-2
+      - backend-instance-3_benchmark-2
   nginx-setup-3_benchmark-2:
     extends:
       file: "benchmark-2/docker-compose.yml"
@@ -67,6 +73,7 @@ services:
     depends_on:
       - backend-instance-1_benchmark-2
       - backend-instance-2_benchmark-2
+      - backend-instance-3_benchmark-2
   nginx-setup-2-withcache_benchmark-2:
     extends:
       file: "benchmark-2/docker-compose.yml"
@@ -74,6 +81,7 @@ services:
     depends_on:
       - backend-instance-1_benchmark-2
       - backend-instance-2_benchmark-2
+      - backend-instance-3_benchmark-2
 
   tools:
     build:

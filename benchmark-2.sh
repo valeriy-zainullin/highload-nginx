@@ -7,7 +7,7 @@ store_line() {
     CSV_LINES="$CSV_LINES""$1"$'\n'
 }
 
-store_line "Setup:Path:Proxy caching:Balancing:Num threads:Requests per second"
+store_line "Setup:Path:Proxy caching:Balancing:Requests in batch:Requests per second"
 
 logs_file=$(mktemp)
 
@@ -30,7 +30,7 @@ run_bench() {
         echo -n " balancing:$4"
     fi
 
-    echo -n " $5"'thr: '
+    echo -n " $5"'-reqs-in-batch: '
 
     post_options=''
     if [ ! -z "$7" ]; then
@@ -52,10 +52,16 @@ run_bench() {
     #   mode going on.https://unix.stackexchange.com/a/492811
     # docker-compose run -T --rm tools ab -n8000 -c"$2" "$3" 2>&1 | grep -Po "Requests per second: *\K[0-9.]+ " | tr -d ' '
 
-    result=$((docker-compose run -T --rm tools /prepare_post_file.bash "$7" /post.txt ab $post_options -n8000 -c"$5" "http://$6.benchmark-2$2" 2> $logs_file) || (echo 1>&2; cat $logs_file 1>&2; exit 1))
+    result=$((docker-compose run -T --rm tools /prepare_post_file.bash "$7" /post.txt ab $post_options -n2000 -c"$5" "http://$6.benchmark-2$2" 2> $logs_file) || (echo 1>&2; cat $logs_file 1>&2; exit 1))
 
-    if ! (echo "$result" | grep "Failed requests: *0 *" > /dev/null); then
+    if echo "$result" | grep "Failed requests: *[1-9][0-9]* *" > /dev/null; then
         echo -e "\nThere are failed requests!" 1>&2
+        echo "$result"
+        exit 1
+    fi
+
+    if echo "$result" | grep "Non-2xx responses: *[1-9][0-9]* *" > /dev/null; then
+        echo -e "\nThere are non-2xx responses!" 1>&2
         echo "$result"
         exit 1
     fi

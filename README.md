@@ -19,6 +19,29 @@
 ### Первый бенчмарк
 Бекэнд на go, уже настроен на кеширование (post запросы только не кешируем на nginx, ничего хорошего из этого не получится.. Можно мб настроить кеширование на клиенте, но на stackoverflow говорят, что это не особо поддерживается кем-либо). Такие результаты.
 
+| Setup                     | Path             | Proxy caching | Balancing | Requests in batch | Requests per second |
+| ------------------------- | ---------------- | ------------- | --------- | ----------------- | ------------------- |
+| backend (single instance) | /what-date-is-it |               |           |                 1 |              701.33 |
+| backend (single instance) | /what-date-is-it |               |           |                 6 |            2,359.69 |
+| backend (single instance) | /what-is-my-name |               |           |                 1 |              739.61 |
+| backend (single instance) | /what-is-my-name |               |           |                 6 |            2,306.52 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 1 |              486.55 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 6 |            1,808.97 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 1 |              490.19 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 6 |            1,833.28 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 1 |              461.33 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 6 |            1,886.78 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 1 |              470.99 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 6 |            1,819.01 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 1 |            2,240.61 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 6 |            3,730.59 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 1 |              482.13 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 6 |            1,833.80 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 1 |              470.00 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 6 |            1,793.93 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 1 |              471.10 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 6 |            1,761.57 |
+|                           |                  |               |           |                   |                     |
 
 
 #### Выводы
@@ -39,7 +62,32 @@ Go [многопоточный сам по себе](https://stackoverflow.com/a
 
 
 ### Второй бенчмарк
-Доступные ресурсы -- шесть ядер. Каждый instance бекэнда может задействовать три. В реальной жизни -- это разные машины по три (в скобочках, 30) ядра. Теперь балансировка только позволит больше ресурсов включить в работу (главное, чтобы накладные расходы на балансировку, пересылки запросов и прочее, не мешали получить выгоду).
+Доступные ресурсы -- шесть ядер. Каждый instance бекэнда может задействовать два. В реальной жизни -- это разные машины по два (в скобочках, 20) ядра. Теперь балансировка только позволит больше ресурсов включить в работу (главное, чтобы накладные расходы на балансировку, пересылки запросов и прочее, не мешали получить выгоду).
+
+| Setup                     | Path             | Proxy caching | Balancing | Requests in batch | Requests per second |
+| ------------------------- | ---------------- | ------------- | --------- | ----------------- | ------------------- |
+| backend (single instance) | /what-date-is-it |               |           |                 1 |              129.97 |
+| backend (single instance) | /what-date-is-it |               |           |                 6 |              268.17 |
+| backend (single instance) | /what-is-my-name |               |           |                 1 |              224.05 |
+| backend (single instance) | /what-is-my-name |               |           |                 6 |              481.00 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 1 |              113.12 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 6 |              259.08 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 1 |              182.51 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 6 |              474.09 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 1 |              117.24 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 6 |              514.23 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 1 |              185.94 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 6 |              815.32 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 1 |            2,240.26 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 6 |            3,893.27 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 1 |              184.91 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 6 |              830.17 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 1 |              114.54 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 6 |              356.99 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 1 |              182.87 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 6 |              617.24 |
+|                           |                  |               |           |                   |                     |
+
 
 #### Выводы
 
@@ -56,6 +104,24 @@ Go [многопоточный сам по себе](https://stackoverflow.com/a
 todo: написать!
 
 ## Видео-демонстрация
+
+
+[comment]: https://stackoverflow.com/a/29862696
+
+[![Видео-демонстрация](media/vlcsnap-2024-03-09-19h25m22s957.png)](media/video.m3u8 "Видео-демонстрация -- нажмите, чтобы посмотреть!")
+
+Ранее была ссылка на файл, но github запрещает файлы размером более 100MB.
+Способы посмотреть видео.
+
+```bash
+cd highload-nginx
+vlc media/video.m3u8
+```
+
+```bash
+cd highload-nginx
+ffplay media/video.m3u8
+```
 
 ## Инструкции
 

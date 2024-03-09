@@ -52,18 +52,16 @@ func dateHandler(wr http.ResponseWriter, req *http.Request) {
 }
 
 func nameHandler(wr http.ResponseWriter, req *http.Request) {
-	if req.Method != "GET" {
+	if req.Method != "POST" {
 		wr.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
 
+	req.ParseForm()
+	name := req.Form.Get("name") // Если "name" не задано, будет пустая строка.
+
 	var name_struct name_api_response
-	err := json.NewDecoder(req.Body).Decode(&name_struct)
-	if err != nil {
-		wr.WriteHeader(http.StatusBadRequest)
-		wr.Write([]byte("400 - Bad Request (invalid POST parameters)"))
-		return
-	}
+	name_struct.Name = name
 
 	names := repeatedSlice(name_struct, 10_000)
 	json.NewEncoder(wr).Encode(names)

@@ -1,13 +1,23 @@
-| Setup                     | Path             | Proxy caching | Balancing | Num threads | Requests per second |
-| ------------------------- | ---------------- | ------------- | --------- | ----------- | ------------------- |
-| backend (single instance) | /what-date-is-it |               |           |           1 |              646.05 |
-| backend (single instance) | /what-date-is-it |               |           |           6 |            2,069.95 |
-| nginx-setup-1             | /what-date-is-it |         False | no        |           1 |              457.27 |
-| nginx-setup-1             | /what-date-is-it |         False | no        |           6 |            1,846.34 |
-| nginx-setup-2             | /what-date-is-it |         False | yes       |           1 |              458.51 |
-| nginx-setup-2             | /what-date-is-it |         False | yes       |           6 |            1,958.33 |
-| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |           1 |            1,960.44 |
-| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |           6 |            3,800.77 |
-| nginx-setup-3             | /what-date-is-it |         False | uneven    |           1 |              463.99 |
-| nginx-setup-3             | /what-date-is-it |         False | uneven    |           6 |            1,881.59 |
-|                           |                  |               |           |             |                     |
+| Setup                     | Path             | Proxy caching | Balancing | Requests in batch | Requests per second |
+| ------------------------- | ---------------- | ------------- | --------- | ----------------- | ------------------- |
+| backend (single instance) | /what-date-is-it |               |           |                 1 |              129.97 |
+| backend (single instance) | /what-date-is-it |               |           |                 6 |              268.17 |
+| backend (single instance) | /what-is-my-name |               |           |                 1 |              224.05 |
+| backend (single instance) | /what-is-my-name |               |           |                 6 |              481.00 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 1 |              113.12 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |                 6 |              259.08 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 1 |              182.51 |
+| nginx-setup-1             | /what-is-my-name |         False | no        |                 6 |              474.09 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 1 |              117.24 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |                 6 |              514.23 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 1 |              185.94 |
+| nginx-setup-2             | /what-is-my-name |         False | yes       |                 6 |              815.32 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 1 |            2,240.26 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |                 6 |            3,893.27 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 1 |              184.91 |
+| nginx-setup-2-withcache   | /what-is-my-name |         False | yes       |                 6 |              830.17 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 1 |              114.54 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |                 6 |              356.99 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 1 |              182.87 |
+| nginx-setup-3             | /what-is-my-name |         False | yes       |                 6 |              617.24 |
+|                           |                  |               |           |                   |                     |

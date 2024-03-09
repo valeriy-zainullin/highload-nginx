@@ -15,6 +15,13 @@ services:
       dockerfile: "backend.dockerfile"
     expose:
       - 80
+  backend-instance-3_benchmark-2:
+    hostname: "backend-instance-3.benchmark-2"
+    build:
+      context: "./backend"
+      dockerfile: "backend.dockerfile"
+    expose:
+      - 80
   nginx-setup-1_benchmark-2:
     hostname: "nginx-setup-1.benchmark-2"
     image: nginx:alpine
