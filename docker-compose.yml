@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+  backend-instance-1_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: backend-instance-1_benchmark-1
+  backend-instance-2_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: backend-instance-2_benchmark-1
+  nginx-setup-1_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: nginx-setup-1_benchmark-1
+    depends_on:
+      - backend-instance-1_benchmark-1
+      - backend-instance-2_benchmark-1
+  nginx-setup-2_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: nginx-setup-2_benchmark-1
+    depends_on:
+      - backend-instance-1_benchmark-1
+      - backend-instance-2_benchmark-1
+  nginx-setup-3_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: nginx-setup-3_benchmark-1
+    depends_on:
+      - backend-instance-1_benchmark-1
+      - backend-instance-2_benchmark-1
+  nginx-setup-2-withcache_benchmark-1:
+    extends:
+      file: "benchmark-1/docker-compose.yml"
+      service: nginx-setup-2-withcache_benchmark-1
+    depends_on:
+      - backend-instance-1_benchmark-1
+      - backend-instance-2_benchmark-1
+
+  backend-instance-1_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: backend-instance-1_benchmark-2
+  backend-instance-2_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: backend-instance-2_benchmark-2
+  nginx-setup-1_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: nginx-setup-1_benchmark-2
+    depends_on:
+      - backend-instance-1_benchmark-2
+      - backend-instance-2_benchmark-2
+  nginx-setup-2_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: nginx-setup-2_benchmark-2
+    depends_on:
+      - backend-instance-1_benchmark-2
+      - backend-instance-2_benchmark-2
+  nginx-setup-3_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: nginx-setup-3_benchmark-2
+    depends_on:
+      - backend-instance-1_benchmark-2
+      - backend-instance-2_benchmark-2
+  nginx-setup-2-withcache_benchmark-2:
+    extends:
+      file: "benchmark-2/docker-compose.yml"
+      service: nginx-setup-2-withcache_benchmark-2
+    depends_on:
+      - backend-instance-1_benchmark-2
+      - backend-instance-2_benchmark-2
+
+  tools:
+    build:
+      context: "./tools"
+      dockerfile: "tools.dockerfile"
+    restart: "no"
+    hostname: "tools"
+    profiles: [tools] # Also makes it not autostart with docker-compose up

@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  backend-instance-1_benchmark-2:
+    hostname: "backend-instance-1.benchmark-2"
+    build:
+      context: "./backend"
+      dockerfile: "backend.dockerfile"
+    expose:
+      - 80
+  backend-instance-2_benchmark-2:
+    hostname: "backend-instance-2.benchmark-2"
+    build:
+      context: "./backend"
+      dockerfile: "backend.dockerfile"
+    expose:
+      - 80
+  nginx-setup-1_benchmark-2:
+    hostname: "nginx-setup-1.benchmark-2"
+    image: nginx:alpine
+    restart: "no"
+    volumes:
+      - ./nginx/nginx-setup-1.conf:/etc/nginx/nginx.conf
+    expose:
+      - 80
+  nginx-setup-2_benchmark-2:
+    hostname: "nginx-setup-2.benchmark-2"
+    image: nginx:alpine
+    restart: "no"
+    volumes:
+      - ./nginx/nginx-setup-2.conf:/etc/nginx/nginx.conf
+    expose:
+      - 80
+  nginx-setup-3_benchmark-2:
+    hostname: "nginx-setup-3.benchmark-2"
+    image: nginx:alpine
+    restart: "no"
+    volumes:
+      - ./nginx/nginx-setup-3.conf:/etc/nginx/nginx.conf
+    expose:
+      - 80
+  nginx-setup-2-withcache_benchmark-2:
+    hostname: "nginx-setup-2-withcache.benchmark-2"
+    build:
+      context: "./nginx"
+      dockerfile: "nginx-setup-2-withcache.dockerfile"
+    restart: "no"
+    volumes:
+      - ./nginx/nginx-setup-2-withcache.conf:/etc/nginx/nginx.conf
+    expose:
+      - 80

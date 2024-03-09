@@ -1,0 +1,13 @@
+| Setup                     | Path             | Proxy caching | Balancing | Num threads | Requests per second |
+| ------------------------- | ---------------- | ------------- | --------- | ----------- | ------------------- |
+| backend (single instance) | /what-date-is-it |               |           |           1 |              581.89 |
+| backend (single instance) | /what-date-is-it |               |           |           6 |            2,498.07 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |           1 |              468.04 |
+| nginx-setup-1             | /what-date-is-it |         False | no        |           6 |            2,028.92 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |           1 |              431.02 |
+| nginx-setup-2             | /what-date-is-it |         False | yes       |           6 |            2,176.17 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |           1 |            2,095.72 |
+| nginx-setup-2-withcache   | /what-date-is-it |          True | yes       |           6 |            4,217.28 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |           1 |              456.03 |
+| nginx-setup-3             | /what-date-is-it |         False | uneven    |           6 |            1,837.16 |
+|                           |                  |               |           |             |                     |

@@ -2,92 +2,61 @@
 
 
 
-## Getting started
+## Задание
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+1. На любом Web-фреймворке реализуйте сервис с двумя API-функциями:
+    * Возвращает JSON-файл с 10 000 одинаковыми записями `{ "year", "month", "day" }` - текущая дата запроса
+    * Возвращает JSON-файл с 10 000 одинаковыми записями `{ "name" }`, где имя `"name"` получено из POST-параметра формы запроса.
+1. Настройте `nginx` для кэширования и балансировки.
+1. Проведите замеры производительности при различных условиях (с проксированием и без него, и разные варианты одновременного количества подключений).
+1. В репозиторий положить исходники Web-сервиса, конфигурационные файлы, и Markdown-отчет о замерах производительности.
+1. После реализации необходимо продемонстрировать работоспособность на своей системе.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Решение
 
-## Add your files
+Проведем два бенчмарка. Ниже будет видео-демонстрация работы бенчмарков и команды, как провести самому. Это не сложно, вам понадобится `docker-compose` и выполнить пару скриптов на баше.
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+### Первый бенчмарк
+Бекэнд на go, уже настроен на кеширование (post запросы только не кешируем на nginx, ничего хорошего из этого не получится.. Можно мб настроить кеширование на клиенте, но на stackoverflow говорят, что это не особо поддерживается кем-либо). Такие результаты.
 
-```
-cd existing_repo
-git remote add origin https://gitlab.akhcheck.ru/valerii.zainullin/highload-nginx.git
-git branch -M main
-git push -uf origin main
-```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.akhcheck.ru/valerii.zainullin/highload-nginx/-/settings/integrations)
+#### Выводы
 
-## Collaborate with your team
+##### Балансировка
+Go [многопоточный сам по себе](https://stackoverflow.com/a/39246575) и запускает N системных потоков, где N -- количество ядер (виртуальных процессоров). И каждый запрос создает горутину с обработчиком пути запроса. Имеем такой тредпул из N системных потоков, на котором крутятся корутины, которые называются в Go горутинами.
+В эти N не входят потоки, которые ожидают возврата из системных вызовов, их может быть и больше.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Так вот. Один instance бекэнда в нашем случае и сам в состоянии утилизировать все доступные ресурсы (каждая горутина из шести получит по своему потоку ОС, поскольку GOMAXPROCS = количество ядер на моем ПК = 12 > 6, go позволит себе заспавнить 12 потоков ОС для горутин, каждая горутина попадет на свой поток ОС). Nginx только мешает, занимает время обработки запроса.
 
-## Test and Deploy
+Если детальнее сказать, пусть `ab` пошлет 6 запросов и будет ждать их ответа, прежде чем послать следующие. В случае `backend-instance`, запустится шесть горутин, которые  сядут на шесть потоков ОС, они спокойно будут исполняться на шести ядрах моего компьютера (у меня 12 ядер, они смогут работать одновременно). Т.е. задействуется шесть ядер.
 
-Use the built-in continuous integration in GitLab.
+Если добавится nginx с балансировкой, то каждый из instance-ов получит по 3 запроса, каждый задействует по три ядра. Ничего не поменялось! В работе три ядра, так еще и nginx время забрал. Вот если один backend-instance не задействует все ресурсы, скажем, есть несколько backend instanc-ов и они живут на разных машинах -- результат будет. Т.к. балансировка тогда -- способ включить в работу большее количество ресурсов, которое без нее backend не задействует.
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+##### Кеширование
 
-***
+Видно, что польза есть. Ускорение в полтора раза.
 
-# Editing this README
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### Второй бенчмарк
+Доступные ресурсы -- шесть ядер. Каждый instance бекэнда может задействовать три. В реальной жизни -- это разные машины по три (в скобочках, 30) ядра. Теперь балансировка только позволит больше ресурсов включить в работу (главное, чтобы накладные расходы на балансировку, пересылки запросов и прочее, не мешали получить выгоду).
 
-## Suggestions for a good README
+#### Выводы
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+##### Балансировка
 
-## Name
-Choose a self-explaining name for your project.
+Совсем другой разговор. Ускорение в два раза! Т.е. буквально балансировка включает в работу дополнительные ресурсы. Так и бывает в реальной жизни.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Еще в реальной жизни точки входа в api -- instance-ы nginx -- тоже балансируются с помощью dns. Т.к. они могут перегрузиться уже сами, когда отбалансировать можно на большое количество instance-ов бекэнда, но пропускной способности самих систем с nginx уже не хватает. И нужно балансировать уже по этим системам.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Но зато мы пришли к тому, что клиенты сами себя балансируют. На этом проблемы с пропускной способностью должны кончаться. Т.к. уже не нужно балансировать балансировщики -- клиенты уже являются распределенной системой.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+##### Кеширование
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+todo: написать!
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+## Видео-демонстрация
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## Инструкции
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Все предельно просто: запустить в одном терминале (или вкладке) `docker-compose up`, затем `./benchmark-1.sh` и `./benchmark-2.sh`. Это будут результаты первого и второго бенчмарка соответственно.
